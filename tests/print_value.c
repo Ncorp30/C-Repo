@@ -54,6 +54,15 @@ static void assert_print_value(const char *input)
     reset(item);
 }
 
+static void assert_print_value_multiple_times(const char *input, size_t times)
+{
+    size_t i;
+    for (i = 0; i < times; i++)
+    {
+        assert_print_value(input);
+    }
+}
+
 static void print_value_should_print_null(void)
 {
     assert_print_value("null");
@@ -90,6 +99,50 @@ static void print_value_should_print_object(void)
     assert_print_value("{}");
 }
 
+static void print_value_should_print_large_array(void)
+{
+    char input[4096];
+    size_t offset = 0;
+    size_t i;
+
+    input[offset++] = '[';
+    for (i = 0; i < 256; i++)
+    {
+        if (i != 0)
+        {
+            input[offset++] = ',';
+        }
+        offset += (size_t)snprintf((char *)&input[offset], sizeof(input) - offset, "%u", (unsigned)i);
+    }
+    input[offset++] = ']';
+    input[offset] = '\0';
+
+    assert_print_value(input);
+    assert_print_value_multiple_times(input, 10);
+}
+
+static void print_value_should_print_large_object(void)
+{
+    char input[8192];
+    size_t offset = 0;
+    size_t i;
+
+    input[offset++] = '{';
+    for (i = 0; i < 128; i++)
+    {
+        if (i != 0)
+        {
+            input[offset++] = ',';
+        }
+        offset += (size_t)snprintf((char *)&input[offset], sizeof(input) - offset, "\"key%u\":\"value%u\"", (unsigned)i, (unsigned)i);
+    }
+    input[offset++] = '}';
+    input[offset] = '\0';
+
+    assert_print_value(input);
+    assert_print_value_multiple_times(input, 10);
+}
+
 int CJSON_CDECL main(void)
 {
     /* initialize cJSON item */
@@ -102,6 +155,8 @@ int CJSON_CDECL main(void)
     RUN_TEST(print_value_should_print_string);
     RUN_TEST(print_value_should_print_array);
     RUN_TEST(print_value_should_print_object);
+    RUN_TEST(print_value_should_print_large_array);
+    RUN_TEST(print_value_should_print_large_object);
 
     return UNITY_END();
 }
