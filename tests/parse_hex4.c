@@ -64,10 +64,34 @@ static void parse_hex4_should_parse_mixed_case(void)
     TEST_ASSERT_EQUAL_INT(0xBEEF, parse_hex4((const unsigned char*)"BEEF"));
 }
 
+static void parse_hex4_should_reject_malformed_input(void)
+{
+    TEST_ASSERT_EQUAL_INT(0, parse_hex4((const unsigned char*)""));
+    TEST_ASSERT_EQUAL_INT(0, parse_hex4((const unsigned char*)"0"));
+    TEST_ASSERT_EQUAL_INT(0, parse_hex4((const unsigned char*)"00"));
+    TEST_ASSERT_EQUAL_INT(0, parse_hex4((const unsigned char*)"000"));
+    TEST_ASSERT_EQUAL_INT(0, parse_hex4((const unsigned char*)"00000"));
+    TEST_ASSERT_EQUAL_INT(0, parse_hex4((const unsigned char*)"zzzz"));
+    TEST_ASSERT_EQUAL_INT(0, parse_hex4((const unsigned char*)"12g4"));
+    TEST_ASSERT_EQUAL_INT(0, parse_hex4((const unsigned char*)" 123"));
+    TEST_ASSERT_EQUAL_INT(0, parse_hex4((const unsigned char*)"\xff\xff\xff\xff"));
+}
+
+static void parse_hex4_should_cover_surrogate_boundaries(void)
+{
+    TEST_ASSERT_EQUAL_INT(0xD7FF, parse_hex4((const unsigned char*)"d7ff"));
+    TEST_ASSERT_EQUAL_INT(0xD800, parse_hex4((const unsigned char*)"d800"));
+    TEST_ASSERT_EQUAL_INT(0xDFFF, parse_hex4((const unsigned char*)"dfff"));
+    TEST_ASSERT_EQUAL_INT(0xE000, parse_hex4((const unsigned char*)"e000"));
+    TEST_ASSERT_EQUAL_INT(0xFFFF, parse_hex4((const unsigned char*)"ffff"));
+}
+
 int CJSON_CDECL main(void)
 {
     UNITY_BEGIN();
     RUN_TEST(parse_hex4_should_parse_all_combinations);
     RUN_TEST(parse_hex4_should_parse_mixed_case);
+    RUN_TEST(parse_hex4_should_reject_malformed_input);
+    RUN_TEST(parse_hex4_should_cover_surrogate_boundaries);
     return UNITY_END();
 }
