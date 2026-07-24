@@ -52,6 +52,16 @@ static void assert_parse_value(const char *string, int type)
     assert_is_value(item, type);
 }
 
+static void assert_parse_value_failure(const char *string)
+{
+    parse_buffer buffer = { 0, 0, 0, 0, { 0, 0, 0 } };
+    buffer.content = (const unsigned char*) string;
+    buffer.length = strlen(string) + sizeof("");
+    buffer.hooks = global_hooks;
+
+    TEST_ASSERT_FALSE(parse_value(item, &buffer));
+}
+
 static void parse_value_should_parse_null(void)
 {
     assert_parse_value("null", cJSON_NULL);
@@ -96,6 +106,70 @@ static void parse_value_should_parse_object(void)
     reset(item);
 }
 
+static void parse_value_should_reject_empty_input(void)
+{
+    assert_parse_value_failure("");
+    reset(item);
+}
+
+static void parse_value_should_reject_unexpected_terminators(void)
+{
+    assert_parse_value_failure("nullx");
+    reset(item);
+    assert_parse_value_failure("truefalse");
+    reset(item);
+    assert_parse_value_failure("1.5abc");
+    reset(item);
+    assert_parse_value_failure("\"unterminated");
+    reset(item);
+}
+
+static void parse_value_should_reject_malformed_json(void)
+{
+    assert_parse_value_failure("{");
+    reset(item);
+    assert_parse_value_failure("[");
+    reset(item);
+    assert_parse_value_failure("{]");
+    reset(item);
+    assert_parse_value_failure("[}");
+    reset(item);
+    assert_parse_value_failure("{\"a\":");
+    reset(item);
+    assert_parse_value_failure("[1,]");
+    reset(item);
+}
+
+static void parse_value_should_reject_extremely_large_numbers(void)
+{
+    assert_parse_value_failure("1e99999999999999999999999999999999999999999999999999");
+    reset(item);
+    assert_parse_value_failure("-1e99999999999999999999999999999999999999999999999999");
+    reset(item);
+}
+
+static void parse_value_should_reject_deep_nesting(void)
+{
+    char deep_array[2048];
+    char deep_object[2048];
+    size_t i;
+
+    for(i = 0; i < sizeof(deep_array) - 2; i++)
+    {
+        deep_array[i] = '[';
+        deep_object[i] = '{';
+    }
+    deep_array[sizeof(deep_array) - 2] = ']';
+    deep_array[sizeof(deep_array) - 1] = '\0';
+    deep_object[sizeof(deep_object) - 2] = '}';
+    deep_object[sizeof(deep_object) - 1] = '\0';
+
+    assert_parse_value_failure(deep_array);
+    reset(item);
+    assert_parse_value_failure(deep_object);
+    reset(item);
+}
+
 int CJSON_CDECL main(void)
 {
     /* initialize cJSON item */
@@ -108,5 +182,10 @@ int CJSON_CDECL main(void)
     RUN_TEST(parse_value_should_parse_string);
     RUN_TEST(parse_value_should_parse_array);
     RUN_TEST(parse_value_should_parse_object);
+    RUN_TEST(parse_value_should_reject_empty_input);
+    RUN_TEST(parse_value_should_reject_unexpected_terminators);
+    RUN_TEST(parse_value_should_reject_malformed_json);
+    RUN_TEST(parse_value_should_reject_extremely_large_numbers);
+    RUN_TEST(parse_value_should_reject_deep_nesting);
     return UNITY_END();
 }
