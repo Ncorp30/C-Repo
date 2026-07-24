@@ -182,11 +182,11 @@ static void cjson_compare_should_compare_objects(void)
     TEST_ASSERT_FALSE(compare_from_string(
                 "{\"one\": 1, \"two\": 2}",
                 "{\"one\": 1, \"two\": 2, \"three\": 3}",
-                true))
+                true));
     TEST_ASSERT_FALSE(compare_from_string(
                 "{\"one\": 1, \"two\": 2}",
                 "{\"one\": 1, \"two\": 2, \"three\": 3}",
-                false))
+                false));
 }
 
 int CJSON_CDECL main(void)
